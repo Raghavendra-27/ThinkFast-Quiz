@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Quiz App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
+        <h1 class="text-3xl font-bold text-center mb-8">Quiz App API Test</h1>
+        
+        <div class="space-y-6">
+            <!-- Test Categories API -->
+            <div class="border rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-2">Test Categories API</h3>
+                <button onclick="testCategories()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Test Categories
+                </button>
+                <div id="categoriesResult" class="mt-2 text-sm"></div>
+            </div>
+
+            <!-- Test Auth API -->
+            <div class="border rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-2">Test Auth API</h3>
+                <button onclick="testAuth()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Test Auth Check
+                </button>
+                <div id="authResult" class="mt-2 text-sm"></div>
+            </div>
+
+            <!-- Test Questions API -->
+            <div class="border rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-2">Test Questions API</h3>
+                <select id="categorySelect" class="border rounded px-3 py-2 mb-2">
+                    <option value="General Knowledge">General Knowledge</option>
+                    <option value="Science & Technology">Science & Technology</option>
+                    <option value="Sports">Sports</option>
+                    <option value="History">History</option>
+                    <option value="Entertainment">Entertainment</option>
+                </select>
+                <button onclick="testQuestions()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 ml-2">
+                    Test Questions
+                </button>
+                <div id="questionsResult" class="mt-2 text-sm"></div>
+            </div>
+
+            <!-- Database Status -->
+            <div class="border rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-2">Database Status</h3>
+                <div class="text-sm text-gray-600">
+                    <p>Make sure you have:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>XAMPP/WAMP running</li>
+                        <li>Apache and MySQL services started</li>
+                        <li>Database 'quiz_app' created</li>
+                        <li>Tables created from setup.sql</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="border rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-2">Quick Links</h3>
+                <div class="space-x-4">
+                    <a href="fpage.html" class="text-blue-500 hover:underline">Homepage</a>
+                    <a href="login.html" class="text-blue-500 hover:underline">Login</a>
+                    <a href="signin.html" class="text-blue-500 hover:underline">Signup</a>
+                    <a href="index.html" class="text-blue-500 hover:underline">Quiz</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testCategories() {
+            const resultDiv = document.getElementById('categoriesResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('api/quiz.php?action=get_categories');
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="text-green-600">✅ Categories API working!</div>
+                        <div class="mt-2">Found ${result.categories.length} categories:</div>
+                        <ul class="list-disc list-inside mt-1">
+                            ${result.categories.map(cat => `<li>${cat.name}</li>`).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${result.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testAuth() {
+            const resultDiv = document.getElementById('authResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=check_auth'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.authenticated) {
+                        resultDiv.innerHTML = `<div class="text-green-600">✅ Auth API working! User is logged in as: ${result.user.name}</div>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="text-yellow-600">⚠️ Auth API working! User is not logged in (this is normal)</div>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${result.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testQuestions() {
+            const resultDiv = document.getElementById('questionsResult');
+            const category = document.getElementById('categorySelect').value;
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`api/quiz.php?action=get_questions&category=${encodeURIComponent(category)}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="text-green-600">✅ Questions API working!</div>
+                        <div class="mt-2">Found ${result.questions.length} questions for ${category}</div>
+                        <div class="mt-2 text-xs">Sample question: ${result.questions[0]?.question || 'No questions'}</div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${result.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            testCategories();
+            testAuth();
+        };
+    </script>
+</body>
+</html>
+
